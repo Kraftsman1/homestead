@@ -10,6 +10,10 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'DC Engine' },
+      ],
+      noscript: [
+        // <noscript>JavaScript is required</noscript>
+        { children: 'JavaScript is required' }
       ]
     },
   },
@@ -18,5 +22,11 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss'
   ],
 
-  devtools: { enabled: true }
+  devtools: {
+    enabled: true,
+
+    timeline: {
+      enabled: true
+    }
+  }
 })

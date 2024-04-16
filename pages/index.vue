@@ -2,10 +2,12 @@
 definePageMeta({
     title: "Home",
 });
+
 </script>
 
 <template>
-    <div>
-        <NuxtLink to="/about">About</NuxtLink>
-    </div>
+    <Hero />
+
+    <PopularDestinations />
+    <TopRentalProperties />
 </template>

@@ -1,53 +1,56 @@
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const form = ref({
     email: '',
     password: '',
 });
 
+const loading = ref(false);
+
 const error = ref(null);
 
 async function handleLogin() {
+    loading.value = true;
     try {
-        const response = await fetch("https://dc-engine.markappghana.dev/api/v1/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(form.value),
-        });
+        const response = await axios.post("https://dc-engine.markappghana.dev/api/v1/auth/login",
+            form.value,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
 
-        if (response.ok) {
+        if (response.status === 201) {
             console.log("Login successful");
 
             // Redirect to homepage
-            window.location.href = "/";
+            router.push('/');
 
             // Reset errors
             error.value = null;
-        } else {
-            const data = await response.json();
 
-            if (response.status === 422) {
-                error.value = data.errors;
-            } else {
-                console.error('Login failed:', data.message)
-                error.value = ('An error occured during login:', { message: data.message });
-            }
+            loading.value = false;
         }
     } catch (error) {
-        console.error('An error occured during login:', error.message)
-        error.value = ('An error occured during login:', error);
+        loading.value = false;
+        console.error('An error occured when logging in:', error.response.data.message);
+        error.value = error.response.data.message;
+        console.log(error.value);
     }
 }
 
 </script>
 
 <template>
-    <div class="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-lg">
-            <h1 class="text-center text-2xl font-bold text-indigo-600 sm:text-3xl">DC Engine</h1>
+    <div class="mx-auto max-w-screen-xl max-h-full px-4 py-16 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-lg text-center">
+            <h1 class="text-center text-2xl font-bold text-blue-600 sm:text-3xl">DC Engine</h1>
 
             <p class="mx-auto mt-4 max-w-md text-center text-gray-500">
                 Welcome back! Please sign in to your account.
@@ -94,22 +97,37 @@ async function handleLogin() {
                     </div>
                 </div>
 
-                <button type="submit"
-                    class="block w-full rounded-lg bg-indigo-600 px-5 py-3 text-sm font-medium text-white">
-                    Login
+                <!-- Display loading indicator -->
+                <button :disabled="loading"
+                    class="block w-full rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
+                    <span v-if="loading" class="mr-2">
+                        <!-- You can replace this with your preferred loading animation or spinner -->
+                        <svg class="animate-spin h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg"
+                            fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 4.418 3.582 8 8 8v-4zm2-3.447V6.618a7.946 7.946 0 012.345-.004L10 8.844z">
+                            </path>
+                        </svg>
+                    </span>
+                    <span v-else>Login</span>
                 </button>
 
-                <p class="text-center text-sm text-gray-500">
-                    No account?
-                    <a class="underline" href="/auth/register">Sign up</a>
-                </p>
+                <div class="flex justify-between items-center">
+                    <a href="#" class="text-sm text-blue-600 hover:underline">Forgot password?</a>
+
+                    <p class="text-center text-sm text-gray-500">
+                        No account?
+                        <a href="/auth/register" class="text-sm text-blue-600 hover:underline">Create an account</a>
+                    </p>
+                </div>
+
                 <!-- Display validation errors -->
-                <div v-if="error">
-                    <ul>
-                        <li v-for="(messages, field) in error" :key="field">
-                            {{ field }}: {{ Array.isArray(messages) ? messages.join(', ') : messages }}
-                        </li>
-                    </ul>
+                <div v-if="error" class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded relative"
+                    role="alert">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">{{ error.value }}</span>
                 </div>
             </form>
         </div>
