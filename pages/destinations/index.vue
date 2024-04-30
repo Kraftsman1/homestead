@@ -1,64 +1,62 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
-import { useRouter, useRoute } from 'vue-router';
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 
-const router = useRouter();
 const route = useRoute();
 
 const destinations = ref([]);
 const error = ref(null);
-const page = route.query.page || 1;
-const limit = route.query.limit || 2;
 const totalPages = ref(0);
 
-const params = new URLSearchParams();
-params.append('page', page);
-params.append('limit', limit);
+const page = computed(() => route.query.page || 1);
+const limit = computed(() => route.query.limit || 5);
 
-const fetchDestinations = async () => {
+await fetchDestinations();
+
+watch(route, () => {
+    fetchDestinations();
+});
+
+async function fetchDestinations() {
     try {
-        const response = await axios.get('https://dc-engine.markappghana.dev/api/v1/destinations', {
+        const { $axios } = useNuxtApp();
+
+        const response = await $axios.get("/destinations", {
             headers: {
                 "Content-Type": "application/json",
             },
-            params: params,
+            params: {
+                page: page.value,
+                limit: limit.value,
+            },
         });
 
         if (response.status === 200) {
             destinations.value = response.data.data;
-            totalPages.value = response.data.meta.totalPages;
+            totalPages.value = response.data.data.last_page;
         }
-    } catch (error) {
+    } catch (_error) {
         // Handle error
-        error.value = error.response.data.message;
-        if (error.response.status === 404) {
-            error.value = 'No destinations found';
+        error.value = _error.response.data.message;
+        if (_error.response.status === 404) {
+            error.value = "No destinations found";
         }
 
-        if (error.response.status === 500) {
-            error.value = 'An error occurred when fetching destinations';
+        if (_error.response.status === 500) {
+            error.value = "An error occurred when fetching destinations";
         }
 
-        console.error(error.value, error.response.status);
-
+        console.error(error.value, _error.response.status);
     }
-};
-
-onMounted(async () => {
-    await fetchDestinations();
-    
-    // Push updated URL to router after fetching destinations
-    router.push({ query: params.toString() });
-});
+}
 </script>
-
 
 <template>
     <div class="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 sm:py-12 lg:px-8">
-
         <header>
-            <h2 class="pl-2 text-l font-bold text-gray-900 sm:text-2xl">Destinations</h2>
+            <h2 class="pl-2 text-l font-bold text-gray-900 sm:text-2xl">
+                Destinations
+            </h2>
         </header>
 
         <div v-if="error">
@@ -137,7 +135,7 @@ onMounted(async () => {
                 </div>
             </div>
             <!-- pagiation -->
-            <div class="mt-4 items-center">
+            <!-- <div class="mt-4 items-center">
                 <ol class="flex justify-center gap-1 text-xs font-medium">
                     <li v-if="page > 1">
                         <a href="#" @click.prevent="fetchDestinations(page - 1)"
@@ -174,16 +172,13 @@ onMounted(async () => {
                         </a>
                     </li>
                 </ol>
-            </div>
+            </div> -->
         </div>
 
         <div v-else class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <skeleton-loader v-for="n in 12" :key="n" />
         </div>
 
-        <Pagination />
-
-
-
+        <Pagination :totalPages="totalPages" />
     </div>
 </template>
