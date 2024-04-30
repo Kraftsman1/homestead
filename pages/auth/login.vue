@@ -1,9 +1,10 @@
 <script setup>
 import { ref } from 'vue';
-import axios from 'axios';
 import { useRouter } from 'vue-router';
+import { watchEffect } from 'vue';
 
 const router = useRouter();
+const { $axios } = useNuxtApp();
 
 const form = ref({
     email: '',
@@ -11,13 +12,38 @@ const form = ref({
 });
 
 const loading = ref(false);
-
 const error = ref(null);
 
+function validateForm() {
+    if (!form.value.email || !form.value.password) {
+        error.value = 'Please fill in all fields';
+        return false;
+    }
+
+    // Basic email validation
+    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (!emailPattern.test(form.value.email)) {
+        error.value = 'Please enter a valid email address';
+        return false;
+    }
+
+    return true;
+}
+
+watchEffect(() => {
+    console.log(error.value);
+});
+
 async function handleLogin() {
+
+    if (!validateForm()) {
+        return;
+    }
+
     loading.value = true;
     try {
-        const response = await axios.post("https://dc-engine.markappghana.dev/api/v1/auth/login",
+
+        const response = await $axios.post("/auth/login",
             form.value,
             {
                 headers: {
@@ -37,11 +63,12 @@ async function handleLogin() {
 
             loading.value = false;
         }
-    } catch (error) {
+    } catch (_error) {
+        console.log(_error);
         loading.value = false;
-        console.error('An error occured when logging in:', error.response.data.message);
-        error.value = error.response.data.message;
-        console.log(error.value);
+        console.error('An error occured when logging in:', _error.response.data.message);
+        error.value = _error.response.data.message;
+        // console.log(error.value);
     }
 }
 
@@ -65,7 +92,7 @@ async function handleLogin() {
                     <div class="relative">
                         <input type="email" v-model="form.email"
                             class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                            placeholder="john@doe.com" />
+                            placeholder="john@doe.com" required />
 
                         <span class="absolute inset-y-0 end-0 grid place-content-center px-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-gray-400" fill="none"
@@ -83,7 +110,7 @@ async function handleLogin() {
                     <div class="relative">
                         <input type="password" v-model="form.password"
                             class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                            placeholder="password" />
+                            placeholder="password" required />
 
                         <span class="absolute inset-y-0 end-0 grid place-content-center px-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="size-4 text-gray-400" fill="none"
@@ -101,7 +128,6 @@ async function handleLogin() {
                 <button :disabled="loading"
                     class="block w-full rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500">
                     <span v-if="loading" class="mr-2">
-                        <!-- You can replace this with your preferred loading animation or spinner -->
                         <svg class="animate-spin h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg"
                             fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
@@ -126,8 +152,8 @@ async function handleLogin() {
                 <!-- Display validation errors -->
                 <div v-if="error" class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded relative"
                     role="alert">
-                    <strong class="font-bold">Error!</strong>
-                    <span class="block sm:inline">{{ error.value }}</span>
+                    <strong class="font-bold">Error! </strong>
+                    <span class="block sm:inline">{{ error }}</span>
                 </div>
             </form>
         </div>

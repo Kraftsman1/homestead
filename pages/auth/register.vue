@@ -1,9 +1,10 @@
 <script setup>
 import { ref } from "vue";
-import axios from 'axios';
 import { useRouter } from "vue-router";
+import { watchEffect } from "vue";
 
 const router = useRouter();
+const { $axios } = useNuxtApp();
 
 const form = ref({
     firstname: "",
@@ -15,14 +16,45 @@ const form = ref({
 });
 
 const loading = ref(false);
-
 const error = ref(null);
 
+const validateForm = () => {
+
+    error.value = null;
+
+    if (!form.value.firstname || !form.value.lastname || !form.value.email || !form.value.password || !form.value.password_confirmation) {
+        error.value = "Please fill in all fields";
+        return false;
+    }
+
+    // Basic email validation
+    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (!emailPattern.test(form.value.email)) {
+        error.value = "Please enter a valid email address";
+        return false;
+    }
+
+    if (form.value.password !== form.value.password_confirmation) {
+        error.value = "Passwords do not match";
+        return false;
+    }
+
+    return true;
+};
+
+watchEffect(() => {
+    console.log(error.value);
+});
+
 async function register() {
+    if (!validateForm()) {
+        return;
+    }
+
     loading.value = true;
     try {
-        const response = await axios.post(
-            "https://dc-engine.markappghana.dev/api/v1/auth/signup",
+        const response = await $axios.post(
+            "/auth/signup",
             form.value,
             {
                 headers: {
@@ -39,18 +71,14 @@ async function register() {
 
             // Reset errors
             error.value = null;
-        } else {
-            console.error("Registration failed:", response.data.message);
-            error.value = response.data.message;
         }
-    } catch (error) {
-        if (error.response.status === 422) {
-            console.error("Registration failed:", error.response.data.errors);
-            error.value = error.response.data.errors;
-        } else {
-            console.error("An error occured when registering:", error.response.data.message);
-            error.value = error.response.data.message;
-        }
+    } catch (_error) {
+
+        console.log(_error)
+        error.value = _error.response.data.errors;
+
+        console.error("An error occured when registering:", _error.response.data.errors);
+
     } finally {
         // Reset loading state after request completes
         loading.value = false;
@@ -116,7 +144,7 @@ async function register() {
 
                             <input type="text" v-model="form.firstname" id="FirstName" name="firstname"
                                 class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                                placeholder="John" />
+                                placeholder="John" required />
                         </div>
 
                         <div class="col-span-6 sm:col-span-3">
@@ -126,7 +154,7 @@ async function register() {
 
                             <input type="text" v-model="form.lastname" id="LastName" name="lastname"
                                 class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                                placeholder="Doe" />
+                                placeholder="Doe" required />
                         </div>
 
                         <div class="col-span-6">
@@ -136,7 +164,7 @@ async function register() {
 
                             <input type="email" v-model="form.email" id="Email" name="email"
                                 class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                                placeholder="john@doe.com" />
+                                placeholder="john@doe.com" required />
                         </div>
 
                         <div class="col-span-6 sm:col-span-3">
@@ -146,7 +174,7 @@ async function register() {
 
                             <input type="password" v-model="form.password" id="Password" name="password"
                                 class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                                placeholder="********" />
+                                placeholder="********" required />
                         </div>
 
                         <div class="col-span-6 sm:col-span-3">
@@ -157,7 +185,7 @@ async function register() {
                             <input type="password" v-model="form.password_confirmation" id="PasswordConfirmation"
                                 name="password_confirmation"
                                 class="w-full rounded-lg border-gray-200 p-4 pe-12 text-sm shadow-sm"
-                                placeholder="********" />
+                                placeholder="********" required />
                         </div>
 
                         <div class="col-span-6">
@@ -210,7 +238,7 @@ async function register() {
                         <div v-if="error"
                             class="bg-red-100 text-red-700 border border-red-400 px-4 py-3 rounded relative"
                             role="alert">
-                            <strong class="font-bold">Error!</strong>
+                            <strong class="font-bold">Error! </strong>
                             <span class="block sm:inline">{{ error }}</span>
                         </div>
                     </form>

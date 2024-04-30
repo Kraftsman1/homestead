@@ -1,15 +1,22 @@
 import { ref } from 'vue';
 import axios from 'axios';
 
-export default function useAxios(url) {
+export default function useAxios(url, options) {
+
+    const {$axios} = useNuxtApp();
+
     const data = ref(null);
     const error = ref(null);
     const loading = ref(false);
-    let source = null; // Axios cancel token source
+     // Axios cancel token source
+    let source = null;
+
+
 
     const fetchData = async () => {
         loading.value = true;
-        error.value = null; // Reset error before new fetch
+         // Reset error before new fetch
+        error.value = null;
 
         // Cancel previous request if it exists
         if (source) {
@@ -20,13 +27,15 @@ export default function useAxios(url) {
         source = axios.CancelToken.source();
 
         try {
-            const response = await axios.get(url, {
+
+            const response = await $axios.get(url, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
                 // params: params,
-                cancelToken: source.token
+                cancelToken: source.token,
+                ...(options ?? {}),
             });
 
             if (response.status === 200) {
@@ -48,6 +57,7 @@ export default function useAxios(url) {
             loading.value = false;
         }
     };
+
 
     return ({
         data,

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import useAxios from '@/composables/useAxios';
@@ -15,13 +15,11 @@ const { id } = router.currentRoute.value.params;
 destinationID.value = id;
 
 // Fetch the destination details using the useAxios composable
-const url = `https://dc-engine.markappghana.dev/api/v1/destinations/${destinationID.value}`;
+const url = `/destinations/${destinationID.value}`;
 
-const { data: destination, error, loading, fetchData } = useAxios(url);
+const { data: destination, error, loading, fetchData} = useAxios(url);
 
-onMounted(() => {
-    fetchData();
-});
+await fetchData();
 
 </script>
 
