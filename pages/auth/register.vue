@@ -3,6 +3,17 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { watchEffect } from "vue";
 
+definePageMeta({
+    middleware: 'auth',
+})
+
+useSeoMeta({
+    title: 'Register',
+    description: 'Register to DC Engine',
+    keywords: 'register, sign up, create account',
+    robots: 'noindex, nofollow',
+})
+
 const router = useRouter();
 const { $axios } = useNuxtApp();
 

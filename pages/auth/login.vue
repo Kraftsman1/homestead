@@ -2,9 +2,16 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { watchEffect } from 'vue';
+import { useAuthStore } from '~/stores/useAuthStore';
+
+definePageMeta({
+    middleware: 'auth',
+})
+
+const { $axios } = useNuxtApp();
+const authStore = useAuthStore();
 
 const router = useRouter();
-const { $axios } = useNuxtApp();
 
 const form = ref({
     email: '',
@@ -52,8 +59,16 @@ async function handleLogin() {
             }
         );
 
-        if (response.status === 201) {
-            console.log("Login successful");
+        if (response.status === 200) {
+            // alert("Login successful");
+            
+            // Save user data to store  
+            authStore.setUser(response.data.user);
+
+            // Save access token to store
+            authStore.setAccessToken(response.data.access_token);
+
+            console.log(authStore.isLoggedIn);
 
             // Redirect to homepage
             router.push('/');

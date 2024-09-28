@@ -1,6 +1,9 @@
-<script setup lang="ts">
-definePageMeta({
-    title: "Home",
+<script setup>
+
+useHead({
+    titleTemplate(title) {
+        return `Home | ${title}`;
+    }
 });
 
 </script>

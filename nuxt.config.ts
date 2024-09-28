@@ -14,7 +14,10 @@ export default defineNuxtConfig({
       noscript: [
         // <noscript>JavaScript is required</noscript>
         { children: 'JavaScript is required' }
-      ]
+      ],
+      script: [
+        { src: 'https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.7.3/dist/alpine.min.js' }
+      ],
     },
   },
 
@@ -24,7 +27,9 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@nuxt/image', '@pinia-plugin-persistedstate/nuxt', 'nuxt-icon'],
+
+  
 
   devtools: {
     enabled: true,

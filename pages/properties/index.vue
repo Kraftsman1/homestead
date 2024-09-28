@@ -1,27 +1,35 @@
 <script setup>
-import { ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '~/stores/useAuthStore';
 
+const authStore = useAuthStore();
 const route = useRoute();
+const router = useRouter();
 
-const destinations = ref([]);
+const properties = ref([]);
 const error = ref(null);
 const totalPages = ref(0);
 
-const page = computed(() => route.query.page || 1);
-const limit = computed(() => route.query.limit || 5);
+const { $axios } = useNuxtApp();
 
-await fetchDestinations();
+const page = computed(() => route.query.page || 1);
+const limit = ref(route.query.limit || 10);
+
+await fetchProperties();
 
 watch(route, () => {
-    fetchDestinations();
+    fetchProperties();
 });
 
-async function fetchDestinations() {
-    try {
-        const { $axios } = useNuxtApp();
+// watch for changes in the limit and update url query
+watch(limit, () => {
+    router.push({ query: { ...route.query, limit: limit.value } });
+});
 
-        const response = await $axios.get("/destinations", {
+async function fetchProperties() {
+    try {
+        const response = await $axios.get("/properties", {
             headers: {
                 "Content-Type": "application/json",
             },
@@ -32,44 +40,45 @@ async function fetchDestinations() {
         });
 
         if (response.status === 200) {
-            destinations.value = response.data.data;
+            properties.value = response.data.data;
             totalPages.value = response.data.data.last_page;
         }
     } catch (_error) {
         // Handle error
         error.value = _error.response.data.message;
         if (_error.response.status === 404) {
-            error.value = "No destinations found";
+            error.value = "No properties found";
         }
 
         if (_error.response.status === 500) {
-            error.value = "An error occurred when fetching destinations";
+            error.value = "An error occurred when fetching properties";
         }
 
         console.error(error.value, _error.response.status);
     }
 }
+
 </script>
 
 <template>
     <div class="mx-auto max-w-screen-xl px-4 py-16 sm:px-6 sm:py-12 lg:px-8">
         <header>
             <h2 class="pl-2 text-l font-bold text-gray-900 sm:text-2xl">
-                Destinations
+                Properties
             </h2>
         </header>
 
-        <div v-if="error">
+        <div v-if="error" class="text-red-500">
             <p>Error: {{ error.value }}</p>
         </div>
 
-        <div v-else-if="destinations.data">
-            <DestinationsFilter />
+        <div v-else-if="properties.data">
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div v-for="destination in destinations.data" :key="destination.id">
-                    <a :href="'/destinations/' + destination.id" class="block rounded-lg p-2 shadow-sm shadow-blue-100">
-                        <img alt=""
-                            src="https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
+                <div v-for="property in properties.data" :key="property.id">
+
+
+                    <a :href="`/properties/${property.id}`" class="block rounded-lg p-2 shadow-sm shadow-blue-100">
+                        <img alt="Property Image" :src="property.banner_image.image_url"
                             class="h-56 w-full rounded-md object-cover" />
 
                         <div class="mt-2">
@@ -77,13 +86,13 @@ async function fetchDestinations() {
                                 <div>
                                     <dt class="sr-only">Price</dt>
 
-                                    <dd class="text-sm text-gray-500">$240,000</dd>
+                                    <dd class="text-sm text-gray-500">GHC {{ property.price }}</dd>
                                 </div>
 
                                 <div>
                                     <dt class="sr-only">Address</dt>
 
-                                    <dd class="font-medium">{{ destination.name }}</dd>
+                                    <dd class="font-medium">{{ property.name }}</dd>
                                 </div>
                             </dl>
 
@@ -110,9 +119,9 @@ async function fetchDestinations() {
                                     </svg>
 
                                     <div class="mt-1.5 sm:mt-0">
-                                        <p class="text-gray-500">Bathroom</p>
+                                        <p class="text-gray-500">{{ property.bathrooms }}</p>
 
-                                        <p class="font-medium">2 rooms</p>
+                                        <p class="font-medium"> Bathrooms</p>
                                     </div>
                                 </div>
 
@@ -124,55 +133,18 @@ async function fetchDestinations() {
                                     </svg>
 
                                     <div class="mt-1.5 sm:mt-0">
-                                        <p class="text-gray-500">Bedroom</p>
+                                        <p class="text-gray-500">{{ property.bedrooms }}</p>
 
-                                        <p class="font-medium">4 rooms</p>
+                                        <p class="font-medium">Bedrooms</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </a>
+
+
                 </div>
             </div>
-            <!-- pagiation -->
-            <!-- <div class="mt-4 items-center">
-                <ol class="flex justify-center gap-1 text-xs font-medium">
-                    <li v-if="page > 1">
-                        <a href="#" @click.prevent="fetchDestinations(page - 1)"
-                            class="inline-flex size-8 items-center justify-center rounded border border-gray-100 bg-white text-gray-900">
-                            <span class="sr-only">Prev Page</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </a>
-                    </li>
-
-                    <li v-for="n in totalPages" :key="n">
-                        <a href="#"
-                        @click.prevent="fetchDestinations(n)"
-                            class="block size-8 rounded border border-gray-100 bg-white text-center leading-8 text-gray-900">
-                            1{{ n }}
-                        </a>
-                    </li>
-
-                    <li v-if="page < totalPages">
-                        <a href="#"
-                        @click.prevent="fetchDestinations(page + 1)"
-                            class="inline-flex size-8 items-center justify-center rounded border border-gray-100 bg-white text-gray-900">
-                            <span class="sr-only">Next Page</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </a>
-                    </li>
-                </ol>
-            </div> -->
         </div>
 
         <div v-else class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -180,5 +152,30 @@ async function fetchDestinations() {
         </div>
 
         <Pagination :totalPages="totalPages" />
+
+        <!-- limit page responses -->
+        <div class="mt-4">
+
+            <div class="flex items-center justify-center mt-4">
+                <div class="flex items-center space-x-2">
+                    <label>
+                        <select v-model="limit" class="h-8 text-sm pr-8">
+                            <option v-for="option in [5, 10, 25, 50]" :value="option" :key="option">{{ option }}
+                            </option>
+                        </select>
+                        <span class="text-sm font-medium">per page</span>
+                    </label>
+                </div>
+            </div>
+
+            <p class="mt-2 text-sm text-gray-500">Showing {{ properties.to }} of {{ properties.total }} properties
+            </p>
+
+
+        </div>
+        
+
+
     </div>
+
 </template>

@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export default function useAxios(url, options) {
 
-    const {$axios} = useNuxtApp();
+    const { $axios } = useNuxtApp();
 
     const data = ref(null);
     const error = ref(null);
